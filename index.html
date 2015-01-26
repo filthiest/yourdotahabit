@@ -1,47 +1,37 @@
 <html>
 <head>
 	<script src="https://code.jquery.com/jquery-2.1.3.js"></script>
+
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/slate/bootstrap.min.css"> 
 	<script type="text/javascript"
 	src="https://www.google.com/jsapi?autoload={
 		'modules':[{
 			'name':'visualization',
 			'version':'1',
-			'packages':['corechart']
+			'packages':['calendar']
 		}]
 	}"></script>
+
+
 	<script>
+
 		var dateMap = new Object;
 		var lastPage = 1;
 		var gameData = new Array;
-		var chartdata = [['Date', 'Games' ]];
-
-		$( document ).ajaxComplete(function( event, xhr, settings ) {
-
-			chartdata = [['Date', 'Games' ]];
-
-	$.each(dateMap,function(k, v) {
-		chartdata.push([new Date(Date.parse(k)),v]);
-	
-	});
-			drawChart();
-
-		});
-
+		var chartdata = new Array;
 
 
 
 		$(function() {
-			google.load("visualization", "1", {packages:["corechart"]});
+			google.load("visualization", "1", {packages:["calendar"]});
+
 			$.ajaxSetup({ dataType: "json" });
 
-			$('#shamebutton').click(function(){	archiveGameData();});
 			$('#workbutton').click(function(){
-
-	//http%3A%2F%2Fwww.dotabuff.com%2Fplayers%2F20651784%2Fmatches%22
-
-	$.ajax({
-		url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&diagnostics=true&callback=",
-		type: "GET",
+				$('#hideshow').show();
+				$.ajax({
+					url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&diagnostics=true&callback=",
+					type: "GET",
     // Work with the response
     success: function( response ) {
     	console.log("Finding the last page of match history.");
@@ -53,77 +43,58 @@
     }
 });
 
-});
+			});
+
 		});
 
-		function findMatchHistory() {
-
-			console.log("Parsing match history starting at page: " + lastPage);
 
 
-			for( i=lastPage;i--;i>1)
-			{
-				console.log("Finding data for page: " + i);
+		$( document ).ajaxStop(function(){
+			gameData = new Array();
+			chartdata = [['Date', 'Games' ]];
 
-				$.ajax({
-					url: "https://query.yahooapis.com/v1/public/yql?q=select%20content%20from%20html%20where%0A%20%20%20(url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2Fmatches%3Fpage%3D" + i + "%22)%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fdiv%2Ftime'&format=json",
-					type: "GET",
-    // Work with the response
-    success: function( response ) {
+			$.each(dateMap,function(k, v) {
+				tmpDate = new Date(Date.parse(k))
+				chartdata.push([new Date(tmpDate.getFullYear(), tmpDate.getMonth(), tmpDate.getDate()),v]);
+				gameData.push(new Date(Date.parse(k)));
+			});
 
-    	$.each(response.query.results.time,function(index,val){
-    		if(!dateMap[val]) dateMap[val] = 0;
-    		dateMap[val]++;
-    	}
-    	);
+			gameData = gameData.sort(function(a,b){
+				return b.getTime() - a.getTime();
+			});
 
-    }
-});
-			}
-		}
+			gameData = gameData.reverse();
 
+			var prevDate;
+			var maxBreak = 0;
+			var maxStreak = 1;
+			var streakCounter = 0;
+			var streakStart;
+			var streakEnd;
+			var breakStart;
+			var breakEnd;
 
-
-function archiveGameData() {
-
-	gameData = new Array();
-	chartdata = [['Date', 'Games' ]];
-
-	$.each(dateMap,function(k, v) {
-		chartdata.push([new Date(Date.parse(k)),v]);
-		gameData.push(new Date(Date.parse(k)));
-	});
-
-	gameData = gameData.sort(function(a,b){
-		return b.getTime() - a.getTime();
-	});
-
-	gameData = gameData.reverse();
-
-	var prevDate;
-	var maxBreak = 0;
-	var maxStreak = 1;
-	var streakCounter = 0;
-	var streakStart;
-	var streakEnd;
-
-	$.each(gameData, function(k,v){
-		gd = gameData[k];
-		if(prevDate != null)
-		{
-			diff = daydiff(prevDate,gd);
+			$.each(gameData, function(k,v){
+				gd = gameData[k];
+				if(prevDate != null)
+				{
+					diff = daydiff(prevDate,gd);
   			//console.log(diff + " days (" + prevDate + " and " + gd + ")");
   			if(diff == 1 )
   			{
   				streakCounter++
 
   				if(streakCounter == 1)
-  					streakStart = gd;
+  					streakStart = new Date(gd.getFullYear(), gd.getMonth(), gd.getDate());
 
   				if(streakCounter > maxStreak)
   				{
-  					streakEnd = gd;
-  					$("#longestStreak").text(streakCounter + " days (" + streakStart + " and " + streakEnd + ")");
+  					streakEnd = new Date(gd.getFullYear(), gd.getMonth(), gd.getDate());
+
+
+  					$("#longestStreak").text(streakCounter);
+  					$("#streakFrom").text(streakStart.getMonth()+1 + '/' + streakStart.getDate() + '/' +  streakStart.getFullYear() );
+  					$("#streakTo").text(streakEnd.getMonth()+1 + '/' + streakEnd.getDate() + '/' +  streakEnd.getFullYear());
   					//text(streakCounter);
   					maxStreak = streakCounter;
   				}
@@ -140,15 +111,24 @@ function archiveGameData() {
   				
   				//console.log("New winner:" + diff + " days (" + prevDate + " and " + gd + ")");
   				maxBreak = diff;
-  				$("#longestBreak").text(diff + " days (" + prevDate + " and " + gd + ")");
+  				breakStart = new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate());
+  				breakEnd = new Date(gd.getFullYear(), gd.getMonth(), gd.getDate());
+  				
+
+  				$("#breakFrom").text(breakStart.getMonth()+1 + '/' + breakStart.getDate() + '/' +  breakStart.getFullYear() );
+  				$("#breakTo").text(breakEnd.getMonth()+1 + '/' + breakEnd.getDate() + '/' +  breakEnd.getFullYear());
+  				$("#longestBreak").text(diff);
   			}
   		}
 
   		prevDate = gd;
-  	}
-  	);
 
-};
+  	});
+
+$('#hideshow').hide();
+drawChart();
+
+});
 
 
 
@@ -163,29 +143,105 @@ function drawChart() {
 		chartdata
 		);
 
- 	 // console.log(chartdata);
+	console.log(chartdata);
 
- 	 var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+	var chart = new google.visualization.Calendar(document.getElementById('chart_div'));
 
- 	 var options = {
+	var options = {
+		calendar: {
+			cellColor: {
+            stroke: 'black',      // Color the border of the squares.
+            strokeOpacity: 0.5, // Make the borders half transparent.
+            strokeWidth: 1      // ...and two pixels thick.
+        }
+    },
+    colorAxis: {minValue: 0,  colors: [ '#f1c40f','#c0392b']}
+};
 
- 	 };
-
- 	 chart.draw(data, options);
- 	}
+chart.draw(data, options);
 
 
- </script>
+
+}
+
+
+
+
+
+function findMatchHistory() {
+
+	
+
+
+	for( i=lastPage;i--;i>1)
+	{
+		console.log("Finding data for page: " + i);
+
+		$.ajax({
+			url: "https://query.yahooapis.com/v1/public/yql?q=select%20content%20from%20html%20where%0A%20%20%20(url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2Fmatches%3Fpage%3D" + i + "%22)%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fdiv%2Ftime'&format=json",
+			type: "GET",
+    // Work with the response
+    success: function( response ) {
+    	if(response.query.results != null)
+    	{
+    		$.each(response.query.results.time,function(index,val){
+    			if(!dateMap[val]) dateMap[val] = 0;
+    			dateMap[val]++;
+    		}
+    		);
+    	}
+    }
+});
+	}
+}
+
+
+
+
+</script>
 </head>
 <body>
-	<div>Longest Break From Dota: <span id="longestBreak"></span> days</div>
-	<div>Longest Dota Streak: <span id="longestStreak"></span> days</div>
+	<div class="container">
+		<h1>Your Dota Habit</h1>
 
-	Your dotabuff URL: <input type="text" name="dotabuff" id="dotabuffurl">
-	<input type="button" id="workbutton" value="Make me feel bad."/>
-	<input type="button" id="shamebutton" value="Looks like it's done, show me my shame."/>
-	<div id="chart_div" style="width: 1000px; height: 500px"></div>
-</body>
+		<div class="row">
+			<div class="col-lg-4">
+				<div class="bs-component">
+					<blockquote>
+						<h2 id="type-blockquotes">Longest Streak</h2>
+						<h2 class="text-success" id="longestStreak">?</h2>
+						<small>Days from <cite title="Source Title" id="streakFrom">?</cite> to <cite title="Source Title" id="streakTo">?</cite></small>
+						
+					</blockquote>
+					<div id="source-button" class="btn btn-primary btn-xs" style="display: none;">&lt; &gt;</div></div>
+				</div>
+				<div class="col-lg-4">
+					<div class="bs-component">
+						<blockquote class="pull-right">
+							<h2 id="type-blockquotes">Longest Break</h2>
+							<h2 class="text-danger" id="longestBreak">?</h2>
+							<small>Days from <cite title="Source Title" id="breakFrom">?</cite> to <cite title="Source Title" id="breakTo">?</cite></small>
+							
+						</blockquote>
+					</div>
+				</div>
+			</div>
 
-</html>
+
+
+			<h2>Your dotabuff URL</h2>
+			<input type="text" name="dotabuff" id="dotabuffurl">
+			<span class="help-block">Example: http://www.dotabuff.com/players/43276219 </span>
+			<input type="button" id="workbutton" value="Make me feel bad."/>
+			<div id="hideshow"  style="width: 1000px;display:none">
+				<h1>We'll get there....eventually.</h1>
+				<div class="progress progress-striped active">
+
+					<div class="progress-bar" style="width: 100%"></div>
+				</div>
+			</div>
+			<div id="chart_div" style="width: 1000px; height: 900px"></div>
+		</body>
+	</div>
+	</html>
 
