@@ -1,0 +1,182 @@
+<html>
+<head>
+	<script src="https://code.jquery.com/jquery-2.1.3.js"></script>
+	<script type="text/javascript"
+	src="https://www.google.com/jsapi?autoload={
+		'modules':[{
+			'name':'visualization',
+			'version':'1',
+			'packages':['corechart']
+		}]
+	}"></script>
+	<script>
+		var dateMap = new Object;
+		var lastPage = 1;
+		var gameData = new Array;
+		var chartdata = [['Date', 'Games' ]];
+
+		$( document ).ajaxComplete(function( event, xhr, settings ) {
+
+			archiveGameData();
+			drawChart();
+
+		});
+
+
+		$(function() {
+			google.load("visualization", "1", {packages:["corechart"]});
+			$.ajaxSetup({ dataType: "json" });
+
+			$('#workbutton').click(function(){
+
+	//http%3A%2F%2Fwww.dotabuff.com%2Fplayers%2F20651784%2Fmatches%22
+
+	$.ajax({
+		url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&diagnostics=true&callback=",
+		type: "GET",
+    // Work with the response
+    success: function( response ) {
+    	console.log("Finding the last page of match history.");
+    	var theUrl = response.query.results.a.href;
+    	lastPage = parseInt(theUrl.substring(theUrl.indexOf("page=")+5));
+    	console.log("Found: " + lastPage);
+
+    	findMatchHistory();
+    }
+});
+
+});
+		});
+
+		function findMatchHistory() {
+
+			console.log("Parsing match history starting at page: " + lastPage);
+
+
+			for( i=lastPage;i--;i>1)
+			{
+				console.log("Finding data for page: " + i);
+
+				$.ajax({
+					url: "https://query.yahooapis.com/v1/public/yql?q=select%20content%20from%20html%20where%0A%20%20%20(url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2Fmatches%3Fpage%3D" + i + "%22)%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fdiv%2Ftime'&format=json",
+					type: "GET",
+    // Work with the response
+    success: function( response ) {
+
+    	$.each(response.query.results.time,function(index,val){
+    		if(!dateMap[val]) dateMap[val] = 0;
+    		dateMap[val]++;
+    	}
+    	);
+
+    }
+});
+			}
+		}
+
+
+
+function archiveGameData() {
+
+	gameData = new Array();
+	chartdata = [['Date', 'Games' ]];
+
+	$.each(dateMap,function(k, v) {
+		chartdata.push([new Date(Date.parse(k)),v]);
+		gameData.push(new Date(Date.parse(k)));
+	});
+
+	gameData = gameData.sort(function(a,b){
+		return b.getTime() - a.getTime();
+	});
+
+	gameData = gameData.reverse();
+
+	var prevDate;
+	var maxBreak = 0;
+	var maxStreak = 1;
+	var streakCounter = 0;
+	var streakStart;
+	var streakEnd;
+
+	$.each(gameData, function(k,v){
+		gd = gameData[k];
+		if(prevDate != null)
+		{
+			diff = daydiff(prevDate,gd);
+  			//console.log(diff + " days (" + prevDate + " and " + gd + ")");
+  			if(diff == 1 )
+  			{
+  				streakCounter++
+
+  				if(streakCounter == 1)
+  					streakStart = gd;
+
+  				if(streakCounter > maxStreak)
+  				{
+  					streakEnd = gd;
+  					$("#longestStreak").text(streakCounter + " days (" + streakStart + " and " + streakEnd + ")");
+  					//text(streakCounter);
+  					maxStreak = streakCounter;
+  				}
+
+  			}
+  			if(diff > 1)
+  			{
+  				streakCounter = 1;
+  				streakStart = gd;
+
+  			}
+  			if(diff > maxBreak)
+  			{
+  				
+  				//console.log("New winner:" + diff + " days (" + prevDate + " and " + gd + ")");
+  				maxBreak = diff;
+  				$("#longestBreak").text(diff + " days (" + prevDate + " and " + gd + ")");
+  			}
+  		}
+
+  		prevDate = gd;
+  	}
+  	);
+
+};
+
+
+
+function daydiff(first, second) {
+	return (second-first)/(1000*60*60*24);
+};
+
+
+function drawChart() {
+
+	var data = google.visualization.arrayToDataTable(
+		chartdata
+		);
+
+ 	 // console.log(chartdata);
+
+ 	 var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+
+ 	 var options = {
+
+ 	 };
+
+ 	 chart.draw(data, options);
+ 	}
+
+
+ </script>
+</head>
+<body>
+	<div>Longest Break From Dota: <span id="longestBreak"></span> days</div>
+	<div>Longest Dota Streak: <span id="longestStreak"></span> days</div>
+
+	Your dotabuff URL: <input type="text" name="dotabuff" id="dotabuffurl">
+	<input type="button" id="workbutton" value="Make me feel bad."/>
+	<div id="chart_div" style="width: 1000px; height: 500px"></div>
+</body>
+
+</html>
+
