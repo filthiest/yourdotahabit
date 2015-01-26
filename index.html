@@ -21,7 +21,7 @@
 		var lastPage = 1;
 		var gameData = new Array;
 		var chartdata = new Array;
-
+		var pageNum = 1;
 
 
 		$(function() {
@@ -43,10 +43,15 @@ $('#clearbutton').click(function(){
 					type: "GET",
     // Work with the response
     success: function( response ) {
-    	console.log("Finding the last page of match history.");
+    	//console.log("Finding the last page of match history.");
+    	if(response.query.results == null)
+    	{
+    		$('#error').text("YQL is not letting you talk to dotabuff right now :(");
+    			return;
+    	}
     	var theUrl = response.query.results.a.href;
     	lastPage = parseInt(theUrl.substring(theUrl.indexOf("page=")+5));
-    	console.log("Found: " + lastPage);
+    	//console.log("Found: " + lastPage);
 
     	findMatchHistory();
     }
@@ -91,7 +96,7 @@ $('#clearbutton').click(function(){
 
 			var avgGamesPerDay = parseFloat(totalGames / gameData.length).toFixed(2);
 
-			$('#avgGames').text(avgGamesPerDay);
+			$('#avgGames').text(avgGamesPerDay + " Games");
 
 			$.each(gameData, function(k,v){
 				gd = gameData[k];
@@ -163,7 +168,7 @@ function drawChart() {
 		chartdata
 		);
 
-	console.log(chartdata);
+	//console.log(chartdata);
 
 	var chart = new google.visualization.Calendar(document.getElementById('chart_div'));
 
@@ -195,11 +200,13 @@ chart.draw(data, options);
 function findMatchHistory() {
 
 	
-
+	$('#totalPages').text(lastPage);
 
 	for( i=lastPage;i--;i>1)
 	{
-		console.log("Finding data for page: " + i);
+		pageNum = i;
+
+		//console.log("Finding data for page: " + i);
 
 		$.ajax({
 			url: "https://query.yahooapis.com/v1/public/yql?q=select%20content%20from%20html%20where%0A%20%20%20(url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2Fmatches%3Fpage%3D" + i + "%22)%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fdiv%2Ftime'&format=json",
@@ -207,7 +214,9 @@ function findMatchHistory() {
     // Work with the response
     success: function( response ) {
     	if(response.query.results != null)
-    	{
+    	{		
+    		$('#pageFetch').text(pageNum);
+
     		$.each(response.query.results.time,function(index,val){
     			if(!dateMap[val]) dateMap[val] = 0;
     			dateMap[val]++;
@@ -230,15 +239,17 @@ function findMatchHistory() {
 
 
 
-
+		<h1 id="error" class="text-danger"></h1>
 
 			<h2>Your dotabuff URL</h2>
 			<input type="text" name="dotabuff" id="dotabuffurl" size="75">
-			<span class="help-block">Example: http://www.dotabuff.com/players/43276219 </span>
+			<span class="help-block">Example: http://www.dotabuff.com/players/XXXXXX </span>
 			<input type="button" id="workbutton" class="btn btn-primary" value="Make me feel bad."/>
 				<input type="button" id="clearbutton" class="btn btn-danger" value="Clear results"/>
 			<div id="hideshow"  style="width: 100%;display:none">
+		
 				<h1>We'll get there....eventually.</h1>
+				<h4>Currently fetching results for <span id="totalPages"> </span> pages of results.
 				<p>We need to fetch all your match history, this will vary based on how big of a filthy casual you are and how fast your internet connection is.</p>
 				<div class="progress progress-striped active">
 
