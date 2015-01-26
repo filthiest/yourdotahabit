@@ -39,7 +39,7 @@ $('#clearbutton').click(function(){
 			$('#workbutton').click(function(){
 				$('#hideshow').show();
 				$.ajax({
-					url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&diagnostics=true&callback=",
+					url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&callback=",
 					type: "GET",
     // Work with the response
     success: function( response ) {
@@ -239,6 +239,7 @@ function findMatchHistory() {
 				<input type="button" id="clearbutton" class="btn btn-danger" value="Clear results"/>
 			<div id="hideshow"  style="width: 100%;display:none">
 				<h1>We'll get there....eventually.</h1>
+				<p>We need to fetch all your match history, this will vary based on how big of a filthy casual you are and how fast your internet connection is.</p>
 				<div class="progress progress-striped active">
 
 					<div class="progress-bar" style="width: 100%"></div>
