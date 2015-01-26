@@ -17,16 +17,24 @@
 
 		$( document ).ajaxComplete(function( event, xhr, settings ) {
 
-			archiveGameData();
+			chartdata = [['Date', 'Games' ]];
+
+	$.each(dateMap,function(k, v) {
+		chartdata.push([new Date(Date.parse(k)),v]);
+	
+	});
 			drawChart();
 
 		});
+
+
 
 
 		$(function() {
 			google.load("visualization", "1", {packages:["corechart"]});
 			$.ajaxSetup({ dataType: "json" });
 
+			$('#shamebutton').click(function(){	archiveGameData();});
 			$('#workbutton').click(function(){
 
 	//http%3A%2F%2Fwww.dotabuff.com%2Fplayers%2F20651784%2Fmatches%22
@@ -175,6 +183,7 @@ function drawChart() {
 
 	Your dotabuff URL: <input type="text" name="dotabuff" id="dotabuffurl">
 	<input type="button" id="workbutton" value="Make me feel bad."/>
+	<input type="button" id="shamebutton" value="Looks like it's done, show me my shame."/>
 	<div id="chart_div" style="width: 1000px; height: 500px"></div>
 </body>
 
