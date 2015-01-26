@@ -27,6 +27,13 @@
 
 			$.ajaxSetup({ dataType: "json" });
 
+$('#clearbutton').click(function(){
+	dateMap = new Object;
+	gameData = new Array;
+	chartdata = new Array;
+	drawChart();
+});
+
 			$('#workbutton').click(function(){
 				$('#hideshow').show();
 				$.ajax({
@@ -230,9 +237,10 @@ function findMatchHistory() {
 
 
 			<h2>Your dotabuff URL</h2>
-			<input type="text" name="dotabuff" id="dotabuffurl">
+			<input type="text" name="dotabuff" id="dotabuffurl" size="75">
 			<span class="help-block">Example: http://www.dotabuff.com/players/43276219 </span>
 			<input type="button" id="workbutton" value="Make me feel bad."/>
+				<input type="button" id="clearbutton" value="Clear results"/>
 			<div id="hideshow"  style="width: 1000px;display:none">
 				<h1>We'll get there....eventually.</h1>
 				<div class="progress progress-striped active">
