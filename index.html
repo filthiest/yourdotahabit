@@ -3,7 +3,7 @@
 	<title>Your dota habit.</title>
 	<script src="https://code.jquery.com/jquery-2.1.3.js"></script>
 
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/slate/bootstrap.min.css"> 
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/superhero/bootstrap.min.css"> 
 	<script type="text/javascript"
 	src="https://www.google.com/jsapi?autoload={
 		'modules':[{
@@ -81,9 +81,20 @@ $('#clearbutton').click(function(){
 			var streakEnd;
 			var breakStart;
 			var breakEnd;
+			var avgGamesPerDay = 0;
+			var totalGames = 0;
+
+			$.each(dateMap,function(k,v){
+				totalGames += dateMap[k];
+			});
+
+			var avgGamesPerDay = parseFloat(totalGames / gameData.length).toFixed(2);
+
+			$('#avgGames').text(avgGamesPerDay);
 
 			$.each(gameData, function(k,v){
 				gd = gameData[k];
+
 				if(prevDate != null)
 				{
 					diff = daydiff(prevDate,gd);
@@ -100,7 +111,7 @@ $('#clearbutton').click(function(){
   					streakEnd = new Date(gd.getFullYear(), gd.getMonth(), gd.getDate());
 
 
-  					$("#longestStreak").text(streakCounter);
+  					$("#longestStreak").text(streakCounter + " Days");
   					$("#streakFrom").text(streakStart.getMonth()+1 + '/' + streakStart.getDate() + '/' +  streakStart.getFullYear() );
   					$("#streakTo").text(streakEnd.getMonth()+1 + '/' + streakEnd.getDate() + '/' +  streakEnd.getFullYear());
   					//text(streakCounter);
@@ -125,7 +136,7 @@ $('#clearbutton').click(function(){
 
   				$("#breakFrom").text(breakStart.getMonth()+1 + '/' + breakStart.getDate() + '/' +  breakStart.getFullYear() );
   				$("#breakTo").text(breakEnd.getMonth()+1 + '/' + breakEnd.getDate() + '/' +  breakEnd.getFullYear());
-  				$("#longestBreak").text(diff);
+  				$("#longestBreak").text(diff + " Days");
   			}
   		}
 
@@ -156,6 +167,10 @@ function drawChart() {
 	var chart = new google.visualization.Calendar(document.getElementById('chart_div'));
 
 	var options = {
+		noDataPattern: {
+           color: '#2B3E50',
+           backgroundColor: '#2B3E50'
+         },
 		calendar: {
 			cellColor: {
             stroke: 'black',      // Color the border of the squares.
@@ -212,41 +227,48 @@ function findMatchHistory() {
 	<div class="container">
 		<h1>Your Dota Habit</h1>
 
-		<div class="row">
-			<div class="col-lg-4">
-				<div class="bs-component">
-					<blockquote>
-						<h2 id="type-blockquotes">Longest Streak</h2>
-						<h2 class="text-success" id="longestStreak">?</h2>
-						<small>Days from <cite title="Source Title" id="streakFrom">?</cite> to <cite title="Source Title" id="streakTo">?</cite></small>
-						
-					</blockquote>
-					<div id="source-button" class="btn btn-primary btn-xs" style="display: none;">&lt; &gt;</div></div>
-				</div>
-				<div class="col-lg-4">
-					<div class="bs-component">
-						<blockquote class="pull-right">
-							<h2 id="type-blockquotes">Longest Break</h2>
-							<h2 class="text-danger" id="longestBreak">?</h2>
-							<small>Days from <cite title="Source Title" id="breakFrom">?</cite> to <cite title="Source Title" id="breakTo">?</cite></small>
-							
-						</blockquote>
-					</div>
-				</div>
-			</div>
+
 
 
 
 			<h2>Your dotabuff URL</h2>
 			<input type="text" name="dotabuff" id="dotabuffurl" size="75">
 			<span class="help-block">Example: http://www.dotabuff.com/players/43276219 </span>
-			<input type="button" id="workbutton" value="Make me feel bad."/>
-				<input type="button" id="clearbutton" value="Clear results"/>
-			<div id="hideshow"  style="width: 1000px;display:none">
+			<input type="button" id="workbutton" class="btn btn-primary" value="Make me feel bad."/>
+				<input type="button" id="clearbutton" class="btn btn-danger" value="Clear results"/>
+			<div id="hideshow"  style="width: 100%;display:none">
 				<h1>We'll get there....eventually.</h1>
 				<div class="progress progress-striped active">
 
 					<div class="progress-bar" style="width: 100%"></div>
+				</div>
+			</div>
+
+					<div class="row">
+			<div class="col-xs-6">
+				<div class="bs-component">
+			
+						<h2 id="type-blockquotes">Longest Streak</h2>
+						<h2 class="text-success" id="longestStreak">? Days</h2>
+						<small><span  id="streakFrom">? </span> to <span id="streakTo"> ?</span></small>
+						
+					<div id="source-button" class="btn btn-primary btn-xs" style="display: none;">&lt; &gt;</div></div>
+				</div>
+				<div class="col-xs-6">
+					<div class="bs-component">
+						
+							<h2 id="type-blockquotes">Longest Break</h2>
+							<h2 class="text-danger" id="longestBreak">? Days</h2>
+							<small><span id="breakFrom">? </span> to <span  id="breakTo"> ?</span></small>
+					</div>
+				</div>
+								<div class="col-xs-6">
+					<div class="bs-component">
+						
+							<h2 id="type-blockquotes">Avg. Session</h2>
+							<h2 class="text-danger" id="avgGames">? Games</h2>
+							<small>You need this many per day to not get the shakes.</small>
+					</div>
 				</div>
 			</div>
 			<div id="chart_div" style="width: 1000px; height: 900px"></div>
