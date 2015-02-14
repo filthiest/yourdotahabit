@@ -2,7 +2,8 @@
 <head>
 	<title>Your dota habit.</title>
 	<script src="https://code.jquery.com/jquery-2.1.3.js"></script>
-
+<script type="text/javascript" src="http://oauth.googlecode.com/svn/code/javascript/oauth.js"></script>
+<script type="text/javascript" src="http://oauth.googlecode.com/svn/code/javascript/sha1.js"></script>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/superhero/bootstrap.min.css"> 
 	<script type="text/javascript"
 	src="https://www.google.com/jsapi?autoload={
@@ -16,6 +17,49 @@
 
 
 	<script>
+
+	var makeSignedRequest = function(ck,cks,encodedurl) {     
+ 
+	var accessor = { consumerSecret: cks, tokenSecret: ""};          
+	var message = { action: encodedurl, method: "GET", parameters: [["oauth_version","1.0"],["oauth_consumer_key",ck]]};
+ 
+	OAuth.setTimestampAndNonce(message);
+	OAuth.SignatureMethod.sign(message, accessor);
+ 
+	var parameterMap = OAuth.getParameterMap(message);
+	var baseStr = OAuth.decodeForm(OAuth.SignatureMethod.getBaseString(message));           
+	var theSig = "";
+ 
+	if (parameterMap.parameters) {
+		for (var item in parameterMap.parameters) {
+			for (var subitem in parameterMap.parameters[item]) {
+				if (parameterMap.parameters[item][subitem] == "oauth_signature") {
+					theSig = parameterMap.parameters[item][1];                    
+					break;                      
+				}
+			}
+		}
+	}
+ 
+	var paramList = baseStr[2][0].split("&");
+	paramList.push("oauth_signature="+ encodeURIComponent(theSig));
+	paramList.sort(function(a,b) {
+		if (a[0] < b[0]) return -1;
+		if (a[0] > b[0]) return 1;
+		if (a[1] < b[1]) return  -1;
+		if (a[1] > b[1]) return 1;
+		return 0;
+	});
+ 
+	var locString = "";
+	for (var x in paramList) {
+		locString += paramList[x] + "&";                
+	}
+ 
+	var finalStr = baseStr[1][0] + "?" + locString.slice(0,locString.length - 1);
+ 
+	return finalStr;
+};
 
 		var dateMap = new Object;
 		var lastPage = 1;
@@ -38,22 +82,29 @@ $('#clearbutton').click(function(){
 
 			$('#workbutton').click(function(){
 				$('#hideshow').show();
+
+				 var rx = /.+dotabuff\.com\/players\/(.+)\/*/g;
+  				var matched = rx.exec($('#dotabuffurl').val());
+  				var playerId =  matched[1]; 
+
+				var $url = "scrape_page.php?playerId=" + playerId;
+
 				$.ajax({
-					url: "https://query.yahooapis.com/v1/public/yql?q=select%20href%20from%20html%20where%0A%20url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2F/matches%22%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fsection%2Farticle%2Fnav%2Fspan%5B8%5D%2Fa'&format=json&callback=",
+					url: $url,
 					type: "GET",
     // Work with the response
     success: function( response ) {
     	//console.log("Finding the last page of match history.");
-    	if(response.query.results == null)
-    	{
-    		$('#error').text("YQL is not letting you talk to dotabuff right now :(");
-    			return;
-    	}
-    	var theUrl = response.query.results.a.href;
+    	//if(response.query.results == null)
+    	//{/
+    	//	$('#error').text("YQL is not letting you talk to dotabuff right now :(");
+    	//		return;
+    	//}
+    	var theUrl = response['url'];
     	lastPage = parseInt(theUrl.substring(theUrl.indexOf("page=")+5));
     	//console.log("Found: " + lastPage);
 
-    	findMatchHistory();
+    	findMatchHistory(playerId);
     }
 });
 
@@ -197,7 +248,7 @@ chart.draw(data, options);
 
 
 
-function findMatchHistory() {
+function findMatchHistory(playerId) {
 
 	
 	$('#totalPages').text(lastPage);
@@ -207,22 +258,22 @@ function findMatchHistory() {
 		pageNum = i;
 
 		//console.log("Finding data for page: " + i);
-
+		var $findUrl = "scrape_matches.php?playerId=" + playerId + "&pageNum=" + pageNum;
 		$.ajax({
-			url: "https://query.yahooapis.com/v1/public/yql?q=select%20content%20from%20html%20where%0A%20%20%20(url%3D%22" + encodeURIComponent($('#dotabuffurl').val()) + "%2Fmatches%3Fpage%3D" + i + "%22)%0A%20%20%20and%20compat%3D%22html5%22%20and%20xpath%3D'%2F%2Fdiv%2Ftime'&format=json",
+			url: $findUrl,
 			type: "GET",
     // Work with the response
     success: function( response ) {
-    	if(response.query.results != null)
-    	{		
+    	//if(response.query.results != null)
+    	//{		
     		$('#pageFetch').text(pageNum);
 
-    		$.each(response.query.results.time,function(index,val){
+    		$.each(response.times,function(index,val){
     			if(!dateMap[val]) dateMap[val] = 0;
     			dateMap[val]++;
     		}
     		);
-    	}
+    	//}
     }
 });
 	}
